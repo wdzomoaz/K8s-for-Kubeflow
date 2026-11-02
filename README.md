@@ -7,7 +7,7 @@ Diese Anleitung legt keine feste Version fest. Sie zeigt, wie man prüft, welche
 ## Inhalt
 
 1. [Voraussetzungen und Kompatibilität prüfen](#1-voraussetzungen-und-kompatibilität-prüfen)
-2. Kubernetes mit kubeadm (folgt)
+2. [Kubernetes mit kubeadm](#2-kubernetes-mit-kubeadm)
 3. GPU-Check und NVIDIA Device Plugin (folgt)
 4. Speicher: Local Path Provisioner als Default StorageClass (folgt)
 5. Kubeflow installieren (folgt)
@@ -192,6 +192,239 @@ kubectl version --client
 
 Erst wenn alle Punkte erfüllt sind, geht es mit Abschnitt 2 weiter.
 
+## 2. Kubernetes mit kubeadm
+
+In diesem Abschnitt wird der Rechner vorbereitet und ein Kubernetes-Cluster mit genau einem Knoten erstellt. Dieser Knoten ist gleichzeitig Control Plane (verwaltet den Cluster) und Worker (führt die Pods aus).
+
+Alle Befehle laufen im Terminal des Laborrechners. Befehle mit `sudo` brauchen Administratorrechte.
+
+### 2.1 Swap ausschalten
+
+Nur nötig, wenn `swapon --show` in Abschnitt 1.2 etwas ausgegeben hat.
+
+```bash
+sudo swapoff -a
+```
+
+- **Was:** schaltet alle aktiven Swap-Bereiche sofort ab. `-a` steht für alle Einträge. Die Änderung gilt nur bis zum nächsten Neustart.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `swapon --show` gibt nichts mehr aus.
+
+```bash
+sudo sed -i '/\sswap\s/ s/^/#/' /etc/fstab
+```
+
+- **Was:** kommentiert in `/etc/fstab` jede Zeile aus, die einen Swap-Bereich einbindet, damit Swap auch nach einem Neustart aus bleibt. `sed -i` ändert die Datei direkt, `/\sswap\s/` wählt die Zeilen mit dem Wort `swap`, `s/^/#/` setzt ein `#` an den Zeilenanfang.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `grep swap /etc/fstab` zeigt die Swap-Zeile nur noch mit `#` am Anfang (unter Ubuntu meist `#/swap.img ...`).
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.2 Kernel-Modul br_netfilter laden
+
+Flannel (das Pod-Netzwerk aus 2.8) braucht das Kernel-Modul `br_netfilter`. kubeadm prüft es seit Version 1.30 nicht mehr, ohne das Modul startet Flannel nicht richtig (https://github.com/flannel-io/flannel).
+
+```bash
+echo br_netfilter | sudo tee /etc/modules-load.d/k8s.conf
+```
+
+- **Was:** schreibt den Modulnamen in eine Datei unter `/etc/modules-load.d/`. systemd lädt alle dort eingetragenen Module bei jedem Systemstart. `sudo tee` wird gebraucht, weil eine einfache Umleitung (`>`) keine Root-Rechte hat.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** die Ausgabe `br_netfilter`.
+- **Prüfen:** `cat /etc/modules-load.d/k8s.conf` zeigt `br_netfilter`.
+
+```bash
+sudo modprobe br_netfilter
+```
+
+- **Was:** lädt das Modul sofort, ohne Neustart.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `lsmod | grep br_netfilter` zeigt eine Zeile mit `br_netfilter`.
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.3 IP-Weiterleitung einschalten
+
+Pods kommunizieren über Netzwerkpakete, die der Rechner weiterleiten muss. Kubernetes verlangt dafür `net.ipv4.ip_forward = 1` (Container Runtimes, Abschnitt *Network configuration*).
+
+```bash
+echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/k8s.conf
+```
+
+- **Was:** legt eine Konfigurationsdatei an, die die IP-Weiterleitung bei jedem Systemstart einschaltet.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** die Ausgabe `net.ipv4.ip_forward = 1`.
+- **Prüfen:** `cat /etc/sysctl.d/k8s.conf` zeigt dieselbe Zeile.
+
+```bash
+sudo sysctl --system
+```
+
+- **Was:** liest alle sysctl-Konfigurationsdateien neu ein und wendet sie sofort an, ohne Neustart.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** eine Liste der eingelesenen Dateien, darunter `* Applying /etc/sysctl.d/k8s.conf ...`.
+- **Prüfen:** `sysctl net.ipv4.ip_forward` gibt `net.ipv4.ip_forward = 1` aus.
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.4 Container Runtime: containerd
+
+Kubernetes startet Container nicht selbst, sondern über eine Container Runtime. Wir verwenden containerd. Für Kubernetes 1.36 muss es containerd 2.x sein: Erst ab containerd 2.0 kann der kubelet den cgroup-Treiber automatisch von der Runtime abfragen, und Kubernetes hat die Unterstützung für containerd 1.x auslaufen lassen (Kubernetes-Blog vom 12.09.2025, https://v1-36.docs.kubernetes.io/blog/2025/09/12/kubernetes-v1-34-cri-cgroup-driver-lookup-now-ga/).
+
+```bash
+containerd --version
+```
+
+- **Was:** zeigt, ob containerd installiert ist und in welcher Version.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** eine Zeile wie `containerd containerd.io 2.x.x ...`.
+- **Prüfen:** Die Version beginnt mit `2.`. Fehlt containerd oder ist es Version 1.x: Docker Engine nach der offiziellen Anleitung installieren bzw. aktualisieren (https://docs.docker.com/engine/install/ubuntu/). Sie bringt das Paket `containerd.io` mit; die containerd-Dokumentation nennt diesen Weg als eine der Installationsmöglichkeiten (https://containerd.io/docs/getting-started/).
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+Das Paket `containerd.io` von Docker liefert eine Konfiguration, in der die Kubernetes-Schnittstelle (CRI) abgeschaltet ist. Deshalb ersetzen wir sie durch die Standardkonfiguration von containerd. Vorher sichern wir die alte Datei.
+
+```bash
+sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
+```
+
+- **Was:** kopiert die bestehende Konfiguration in eine Sicherungsdatei.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe. Meldet `cp`, dass die Datei nicht existiert, gibt es nichts zu sichern, und man macht einfach weiter.
+- **Prüfen:** `ls /etc/containerd/` zeigt `config.toml.bak`.
+
+```bash
+containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
+```
+
+- **Was:** `containerd config default` gibt die vollständige Standardkonfiguration aus, `sudo tee` schreibt sie nach `/etc/containerd/config.toml`. `> /dev/null` unterdrückt die lange Bildschirmausgabe.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `grep disabled_plugins /etc/containerd/config.toml` zeigt `disabled_plugins = []`, also ist `cri` nicht abgeschaltet.
+
+```bash
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+```
+
+- **Was:** stellt containerd auf den cgroup-Treiber `systemd` um. Kubernetes empfiehlt ihn, wenn das System cgroup v2 verwendet, wie aktuelle Ubuntu-Versionen (Container Runtimes, Abschnitt *cgroup drivers*).
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `grep SystemdCgroup /etc/containerd/config.toml` zeigt `SystemdCgroup = true`. Zeigt `grep` gar nichts, steht der Schlüssel nicht in der Standardkonfiguration und muss von Hand im Abschnitt `[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]` ergänzt werden.
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+```bash
+sudo systemctl restart containerd
+```
+
+- **Was:** startet containerd neu, damit die neue Konfiguration gilt.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `systemctl is-active containerd` gibt `active` aus.
+
+### 2.5 Kubernetes-Pakete gegen Updates sperren
+
+kubeadm, kubelet und kubectl dürfen nicht durch ein normales `apt upgrade` auf eine andere Version springen. Ein Kubernetes-Upgrade braucht ein eigenes Vorgehen (Installing kubeadm).
+
+```bash
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+- **Was:** markiert die drei Pakete als „gehalten“. apt aktualisiert sie dann nicht mehr automatisch.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** je Paket eine Zeile wie `kubelet set on hold.`; war es schon gesperrt, steht dort `kubelet was already set on hold.`
+- **Prüfen:** `apt-mark showhold` listet `kubeadm`, `kubectl` und `kubelet`.
+
+### 2.6 Cluster initialisieren
+
+```bash
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+```
+
+- **Was:** erstellt die Control Plane: Zertifikate, etcd (Datenbank des Clusters), API-Server, Scheduler und Controller Manager. Vorher prüft kubeadm den Rechner (Preflight-Checks) und bricht bei Fehlern ab. `--pod-network-cidr=10.244.0.0/16` legt den Adressbereich für Pod-IPs fest; Flannel erwartet genau diesen Bereich (https://github.com/flannel-io/flannel/blob/master/Documentation/kubernetes.md).
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** nach einigen Minuten die Zeile `Your Kubernetes control-plane has initialized successfully!` und darunter die Befehle für 2.7.
+- **Prüfen:** Die Erfolgszeile steht in der Ausgabe. Bricht der Befehl mit `[ERROR ...]` ab, nennt die Meldung den fehlgeschlagenen Preflight-Check (z. B. Swap, Hostname, containerd).
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.7 kubectl für den eigenen Benutzer einrichten
+
+kubeadm legt die Zugangsdaten zum Cluster in `/etc/kubernetes/admin.conf` ab. Damit kubectl ohne `sudo` funktioniert, kopieren wir sie ins eigene Home-Verzeichnis. Diese Datei gibt volle Administratorrechte auf den Cluster und darf nicht weitergegeben oder in ein Git-Repository eingecheckt werden.
+
+```bash
+mkdir -p $HOME/.kube
+```
+
+- **Was:** legt den Ordner `.kube` im Home-Verzeichnis an. `-p` verhindert einen Fehler, falls er schon existiert.
+- **Wo:** Terminal des Laborrechners, als normaler Benutzer (ohne `sudo`).
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `ls -d $HOME/.kube` zeigt den Ordner.
+
+```bash
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+```
+
+- **Was:** kopiert die Zugangsdatei nach `~/.kube/config`, wo kubectl sie standardmäßig sucht. `-i` fragt nach, bevor eine vorhandene Datei überschrieben wird.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe, oder eine Rückfrage, falls schon eine alte `config` existiert.
+- **Prüfen:** `ls -l $HOME/.kube/config` zeigt die Datei, noch mit Besitzer `root`.
+
+```bash
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+- **Was:** macht den eigenen Benutzer zum Besitzer der Datei. `$(id -u)` und `$(id -g)` setzen die eigene Benutzer- und Gruppennummer ein.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** keine Ausgabe.
+- **Prüfen:** `kubectl get nodes` zeigt den Knoten, zunächst mit Status `NotReady`, weil das Pod-Netzwerk noch fehlt.
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.8 Pod-Netzwerk: Flannel
+
+```bash
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+```
+
+- **Was:** lädt das Manifest der neuesten Flannel-Version und legt die darin beschriebenen Objekte im Cluster an (Namespace `kube-flannel`, Berechtigungen, Konfiguration, DaemonSet). Der Befehl stammt aus der Flannel-Dokumentation (https://github.com/flannel-io/flannel).
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** mehrere Zeilen der Form `... created`, z. B. `namespace/kube-flannel created` und `daemonset.apps/kube-flannel-ds created`.
+- **Prüfen:** `kubectl get pods -n kube-flannel` zeigt nach etwa einer Minute einen Pod mit Status `Running`. Danach zeigt `kubectl get nodes` den Status `Ready`.
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.9 Control Plane für normale Pods freigeben
+
+kubeadm versieht den Control-Plane-Knoten mit einem Taint (einer Sperre), damit dort keine normalen Anwendungen laufen. Bei einem einzigen Rechner gibt es aber keinen anderen Knoten, also muss die Sperre weg (Creating a cluster with kubeadm, Abschnitt *Control plane node isolation*).
+
+```bash
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+```
+
+- **Was:** entfernt den Taint `node-role.kubernetes.io/control-plane` von allen Knoten. Das `-` am Ende bedeutet „entfernen“.
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** `node/<hostname> untainted`.
+- **Prüfen:** `kubectl describe node | grep Taints` zeigt `Taints: <none>`.
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
+### 2.10 Endkontrolle
+
+```bash
+kubectl get pods -A
+```
+
+- **Was:** listet alle Pods in allen Namespaces (`-A`).
+- **Wo:** Terminal des Laborrechners.
+- **Erwartet:** Pods in `kube-system` (u. a. `coredns`, `etcd`, `kube-apiserver`, `kube-proxy`) und in `kube-flannel`.
+- **Prüfen:** Alle Pods haben den Status `Running`. Bleibt `coredns` auf `Pending` oder `ContainerCreating`, fehlt meist das Pod-Netzwerk (2.8) oder `br_netfilter` (2.2).
+
+<!-- TODO: Ausgabe vom Laborrechner einfügen (Test 03.11.2026) -->
+
 ## Quellen
 
 - Kubeflow Releases: https://www.kubeflow.org/docs/releases/
@@ -201,5 +434,12 @@ Erst wenn alle Punkte erfüllt sind, geht es mit Abschnitt 2 weiter.
 - Kubernetes Version Skew Policy: https://kubernetes.io/releases/version-skew-policy/
 - Installing kubeadm (Kubernetes v1.36): https://v1-36.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
 - Object Names and IDs: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+- Container Runtimes: https://kubernetes.io/docs/setup/production-environment/container-runtimes/
+- Kubernetes v1.34: Autoconfiguration for Node Cgroup Driver Goes GA (Blog): https://v1-36.docs.kubernetes.io/blog/2025/09/12/kubernetes-v1-34-cri-cgroup-driver-lookup-now-ga/
+- Getting started with containerd: https://containerd.io/docs/getting-started/
+- Install Docker Engine on Ubuntu: https://docs.docker.com/engine/install/ubuntu/
+- Creating a cluster with kubeadm (Kubernetes v1.36): https://v1-36.docs.kubernetes.io/docs/setup/independent/create-cluster-kubeadm
+- Flannel: https://github.com/flannel-io/flannel
+- Flannel mit Kubernetes: https://github.com/flannel-io/flannel/blob/master/Documentation/kubernetes.md
 
 Alle Links geprüft am 02.11.2026.
