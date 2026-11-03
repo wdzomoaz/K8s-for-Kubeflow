@@ -344,4 +344,4 @@ kubectl delete pod gpu-pod
 
 Beispiel (ruki-ws-02, 03.11.2026, kubectl 1.36.6): `pod "gpu-pod" deleted from default namespace`
 
-[Übersicht](../README.md)
+Weiter: [4. Speicher: Local Path Provisioner als Default StorageClass](04-local-path-provisioner.md) | [Übersicht](../README.md)

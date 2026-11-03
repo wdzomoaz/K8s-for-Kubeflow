@@ -9,7 +9,7 @@ Diese Anleitung legt keine feste Version fest. Sie zeigt, wie man prüft, welche
 1. [Voraussetzungen und Kompatibilität prüfen](docs/01-voraussetzungen.md)
 2. [Kubernetes mit kubeadm](docs/02-kubernetes-kubeadm.md)
 3. [GPU-Check und NVIDIA Device Plugin](docs/03-gpu-device-plugin.md)
-4. Speicher: Local Path Provisioner als Default StorageClass (folgt)
+4. [Speicher: Local Path Provisioner als Default StorageClass](docs/04-local-path-provisioner.md)
 5. Kubeflow installieren (folgt)
 6. Zugriff auf das Dashboard (folgt)
 7. Erster Test: Pipeline mit GPU-Schritt (folgt)
@@ -63,5 +63,13 @@ Wo eine echte Ausgabe vom Laborrechner vorliegt, steht sie als Beispiel unter de
 - NVIDIA device plugin for Kubernetes (Repository und README): https://github.com/NVIDIA/k8s-device-plugin
 - NVIDIA device plugin, Releases: https://github.com/NVIDIA/k8s-device-plugin/releases
 - NVIDIA device plugin v0.20.0, statisches Manifest: https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.20.0/deployments/static/nvidia-device-plugin.yml
+- Storage Classes: https://kubernetes.io/docs/concepts/storage/storage-classes/
+- Change the default StorageClass: https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/
+- Local Path Provisioner (Repository und README): https://github.com/rancher/local-path-provisioner
+- Local Path Provisioner, Releases: https://github.com/rancher/local-path-provisioner/releases
+- Local Path Provisioner v0.0.37, Manifest: https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
+- Local Path Provisioner v0.0.37, Beispiel-Pod: https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/examples/pod/pod.yaml
+- Kubeflow Manifests v1.10, README (Voraussetzung Default StorageClass): https://github.com/kubeflow/community-distribution/blob/v1.10-branch/README.md
+- Kubeflow Community Distribution 26.03, Manifeste (PVCs, `spawner_ui_config.yaml`): https://github.com/kubeflow/community-distribution/tree/release-26.03
 
 Alle Links geprüft am 02.11. bzw. 03.11.2026.
