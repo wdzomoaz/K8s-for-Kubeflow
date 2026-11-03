@@ -291,8 +291,16 @@ sudo apt-mark unhold kubelet kubeadm kubectl
 
 - **Was:** hebt die Sperre aus 2.5 auf. Solange die Pakete gesperrt sind, verweigert apt im nächsten Befehl das Entfernen.
 - **Wo:** Terminal des Rechners, der neu aufgesetzt wird.
-- **Erwartet:** je Paket eine Bestätigungszeile, z. B. `Canceled hold on kubelet.` (auf Deutsch sinngemäß gleich).
+- **Erwartet:** je Paket eine Bestätigungszeile, z. B. `Canceled hold on kubelet.` (deutsch: `Halten-Markierung für kubelet entfernt.`).
 - **Prüfen:** `apt-mark showhold` listet die drei Pakete nicht mehr.
+
+Beispiel (ruki-ws-02, 03.11.2026, deutsche Systemsprache):
+
+```
+Halten-Markierung für kubelet entfernt.
+Halten-Markierung für kubeadm entfernt.
+Halten-Markierung für kubectl entfernt.
+```
 
 ```bash
 sudo apt-get purge -y kubeadm kubelet kubectl kubernetes-cni cri-tools
@@ -606,6 +614,14 @@ sudo apt-mark hold kubelet kubeadm kubectl
 - **Wo:** Terminal des Laborrechners.
 - **Erwartet:** je Paket eine Zeile wie `kubelet set on hold.` (deutsch: `kubelet auf Halten gesetzt.`).
 - **Prüfen:** `apt-mark showhold` listet `kubeadm`, `kubectl` und `kubelet`.
+
+Beispiel (ruki-ws-02, 03.11.2026, deutsche Systemsprache):
+
+```
+kubelet auf Halten gesetzt.
+kubeadm auf Halten gesetzt.
+kubectl auf Halten gesetzt.
+```
 
 ```bash
 sudo systemctl enable --now kubelet
