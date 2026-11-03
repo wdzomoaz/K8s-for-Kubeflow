@@ -1,0 +1,34 @@
+# Konfiguration fuer "kubeadm init" auf einem einzelnen Rechner (Abschnitt 2.6 im README).
+# Ziel: moeglichst wenig haengt von der per DHCP vergebenen IP-Adresse ab.
+# Vor der Verwendung den Platzhalter in der letzten Zeile (initial-cluster) durch den Hostnamen ersetzen, siehe README.
+# Referenz: https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta4/
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+nodeRegistration:
+  criSocket: unix:///var/run/containerd/containerd.sock
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: v1.36.6
+# Stabiler Name statt IP: steht in admin.conf, super-admin.conf und in der kube-proxy-Konfiguration.
+# kubelet.conf, controller-manager.conf und scheduler.conf erhalten trotzdem die IP (Messung auf ruki-ws-02, 03.11.2026);
+# sie werden in Abschnitt 2.11 des README auf diesen Namen umgestellt.
+# Der Name muss in /etc/hosts eingetragen sein (siehe README).
+controlPlaneEndpoint: "k8s-api:6443"
+networking:
+  # Adressbereich, den Flannel erwartet.
+  podSubnet: "10.244.0.0/16"
+etcd:
+  local:
+    # etcd nur auf der Loopback-Adresse: bei nur einem Control-Plane-Knoten gibt es keine anderen etcd-Mitglieder.
+    extraArgs:
+      - name: listen-client-urls
+        value: https://127.0.0.1:2379
+      - name: advertise-client-urls
+        value: https://127.0.0.1:2379
+      - name: listen-peer-urls
+        value: https://127.0.0.1:2380
+      - name: initial-advertise-peer-urls
+        value: https://127.0.0.1:2380
+      - name: initial-cluster
+        value: NODE_NAME=https://127.0.0.1:2380
