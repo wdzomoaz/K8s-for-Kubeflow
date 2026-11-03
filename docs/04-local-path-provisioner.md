@@ -280,4 +280,4 @@ drwxrwxrwx 10 root root 4096 Okt 12 12:26 pvc-c0565c33-09ea-4f1c-a680-e82439414e
 - **Rechte:** Das Skript `setup` in der ConfigMap `local-path-config` legt die Verzeichnisse mit `mkdir -m 0777` an, also für alle Benutzer des Rechners les- und schreibbar. Im Beispiel oben sieht man das an `drwxrwxrwx`.
 - **Löschen heißt Datenverlust:** Mit `reclaimPolicy: Delete` verschwinden die Daten, sobald der PVC gelöscht wird, z. B. mit einem Notebook samt Workspace-Volume. Wichtige Ergebnisse gehören daher zusätzlich in den Objektspeicher von Kubeflow oder in eine Sicherung.
 
-Weiter: 5. Kubeflow installieren (folgt) | [Übersicht](../README.md)
+Weiter: [5. Kubeflow installieren](05-kubeflow-installieren.md) | [Übersicht](../README.md)

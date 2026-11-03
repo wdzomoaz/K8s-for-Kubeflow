@@ -10,7 +10,7 @@ Diese Anleitung legt keine feste Version fest. Sie zeigt, wie man prüft, welche
 2. [Kubernetes mit kubeadm](docs/02-kubernetes-kubeadm.md)
 3. [GPU-Check und NVIDIA Device Plugin](docs/03-gpu-device-plugin.md)
 4. [Speicher: Local Path Provisioner als Default StorageClass](docs/04-local-path-provisioner.md)
-5. Kubeflow installieren (folgt)
+5. [Kubeflow installieren](docs/05-kubeflow-installieren.md)
 6. Zugriff auf das Dashboard (folgt)
 7. Erster Test: Pipeline mit GPU-Schritt (folgt)
 
@@ -71,5 +71,10 @@ Wo eine echte Ausgabe vom Laborrechner vorliegt, steht sie als Beispiel unter de
 - Local Path Provisioner v0.0.37, Beispiel-Pod: https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/examples/pod/pod.yaml
 - Kubeflow Manifests v1.10, README (Voraussetzung Default StorageClass): https://github.com/kubeflow/community-distribution/blob/v1.10-branch/README.md
 - Kubeflow Community Distribution 26.03, Manifeste (PVCs, `spawner_ui_config.yaml`): https://github.com/kubeflow/community-distribution/tree/release-26.03
+- Kubeflow Community Distribution 26.03.1, Release Notes: https://github.com/kubeflow/community-distribution/releases/tag/26.03.1
+- Kubeflow Community Distribution 26.03.1, README (Installation, Ressourcen, inotify, Standardbenutzer): https://github.com/kubeflow/community-distribution/blob/26.03.1/README.md
+- Kustomize v5.8.1, Release mit Prüfsummen: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.8.1
+- kubectl kustomize: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/
+- sysctl.d(5), Linux manual page: https://www.man7.org/linux/man-pages/man5/sysctl.d.5.html
 
 Alle Links geprüft am 02.11. bzw. 03.11.2026.
