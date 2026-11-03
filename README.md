@@ -76,9 +76,17 @@ lsb_release -a
 - **Was:** zeigt Name und Version der Linux-Distribution. `-a` gibt alle Felder aus (Distributor, Beschreibung, Release, Codename).
 - **Wo:** Terminal des Laborrechners.
 - **Erwartet:** eine Ubuntu-Version mit Langzeitunterstützung (LTS), z. B. `Description: Ubuntu 24.04.x LTS`.
-- **Prüfen:** Die Zeile `Description` enthält `LTS`.
+- **Prüfen:** Die Zeile `Description` enthält `LTS`. Die Zeile `No LSB modules are available.` ist normal und kein Fehler.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen -->
+Beispiel (ruki-ws-02, 03.11.2026):
+
+```
+No LSB modules are available.
+Distributor ID:	Ubuntu
+Description:	Ubuntu 24.04.5 LTS
+Release:	24.04
+Codename:	noble
+```
 
 #### CPU-Kerne
 
@@ -91,7 +99,7 @@ nproc
 - **Erwartet:** eine Zahl, mindestens `2` für kubeadm, besser `8` oder mehr für Kubeflow.
 - **Prüfen:** Die Zahl ist mindestens 8.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen -->
+Beispiel (ruki-ws-02, 03.11.2026): `32`.
 
 #### Arbeitsspeicher
 
@@ -102,9 +110,15 @@ free -h
 - **Was:** zeigt belegten und freien Arbeitsspeicher sowie Swap. `-h` gibt die Werte lesbar in GiB/MiB aus.
 - **Wo:** Terminal des Laborrechners.
 - **Erwartet:** in der Zeile `Mem:` (deutsch: `Speicher:`) unter `total` (deutsch: `gesamt`) mindestens 16 GiB.
-- **Prüfen:** Der Gesamtwert in der Zeile `Mem:` bzw. `Speicher:` ist 16 GiB oder mehr. Die Zeile `Swap:` wird im nächsten Befehl genauer geprüft.
+- **Prüfen:** Der Gesamtwert in der Zeile `Mem:` bzw. `Speicher:` ist 16 GiB oder mehr. Die Zeile `Swap:` (deutsch: `Auslager:`) wird im nächsten Befehl genauer geprüft.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen, deutsche Spaltennamen damit abgleichen -->
+Beispiel (ruki-ws-02, 03.11.2026, deutsche Systemsprache):
+
+```
+               gesamt       benutzt     frei      gemns.  Puffer/Cache verfügbar
+Speicher:       60Gi       4,6Gi        52Gi        42Mi       3,8Gi        55Gi
+Auslager:         0B          0B          0B
+```
 
 #### Swap
 
@@ -117,7 +131,7 @@ swapon --show
 - **Erwartet:** keine Ausgabe, oder eine Liste mit Swap-Dateien bzw. -Partitionen.
 - **Prüfen:** Ist die Ausgabe leer, ist Swap aus. Steht dort ein Eintrag, muss Swap vor der Installation abgeschaltet werden, solange der kubelet nicht ausdrücklich für Swap konfiguriert ist (Installing kubeadm, Abschnitt *Before you begin*). Das geschieht in Abschnitt 2.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen -->
+Beispiel (ruki-ws-02, 03.11.2026): keine Ausgabe. Auf diesem Rechner war nie Swap eingerichtet (es gibt weder `/swap.img` noch einen Swap-Eintrag in `/etc/fstab`), Abschnitt 2.1 entfällt also.
 
 #### Freier Speicherplatz
 
@@ -130,7 +144,12 @@ df -h /
 - **Erwartet:** eine Zeile mit den Spalten `Size`, `Used`, `Avail` (deutsch: `Größe`, `Benutzt`, `Verf.`).
 - **Prüfen:** Der freie Platz (`Avail` bzw. `Verf.`) ist deutlich größer als 100 GB. Die Komponententabelle der Community Distribution nennt zusammen rund 65 GB Speicher für persistente Volumes, dazu kommen die Container-Images und eigene Datensätze. Die 100 GB sind eine eigene Faustregel, kein offizieller Wert.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen, deutsche Spaltennamen damit abgleichen -->
+Beispiel (ruki-ws-02, 03.11.2026, deutsche Systemsprache):
+
+```
+Dateisystem    Größe Benutzt Verf. Verw% Eingehängt auf
+/dev/nvme1n1p1  1,8T    384G  1,4T   23% /
+```
 
 #### Hostname
 
@@ -143,7 +162,7 @@ hostname
 - **Erwartet:** ein Name wie `ruki-ws-03`.
 - **Prüfen:** Der Name enthält nur Kleinbuchstaben, Ziffern, `-` oder `.`. Kubernetes verlangt das für die meisten Objektnamen (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/). Ein Name mit Großbuchstaben muss vorher geändert werden: Auf `RuKI-ws-07` brach `kubeadm init` deshalb ab (eigene Erfahrung im Labor, März 2026).
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen -->
+Beispiel (ruki-ws-02, 03.11.2026): `ruki-ws-02`.
 
 #### IP-Adresse: fest oder per DHCP?
 
@@ -158,7 +177,13 @@ ip route show default
 - **Erwartet:** eine Zeile der Form `default via <Gateway> dev <Schnittstelle> proto dhcp src <eigene IP> metric 100`.
 - **Prüfen:** Steht dort `proto dhcp`, kann sich die Adresse ändern: Die Adresse aus `src` notieren, um später eine Änderung zu erkennen, und die Abschnitte 2.11 und 2.12 beachten. Steht dort `proto static`, ist die Adresse fest eingestellt.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen (ruki-ws-02: Schnittstelle enp14s0, Gateway 143.93.152.10, IP 143.93.153.200 per DHCP; am 30.09.2026 war es noch 143.93.153.5) -->
+Beispiel (ruki-ws-02, 03.11.2026):
+
+```
+default via 143.93.152.10 dev enp14s0 proto dhcp src 143.93.153.200 metric 100
+```
+
+Die Adresse kommt per DHCP. Am 30.09.2026 hatte derselbe Rechner noch `143.93.153.5`: Ein Adresswechsel ist im Labor also kein theoretischer Fall.
 
 #### Versionen von kubeadm, kubelet und kubectl
 
@@ -369,9 +394,9 @@ sudo sed -i '/\sswap\s/ s/^/#/' /etc/fstab
 - **Was:** kommentiert in `/etc/fstab` jede Zeile aus, die einen Swap-Bereich einbindet, damit Swap auch nach einem Neustart aus bleibt. `sed -i` ändert die Datei direkt, `/\sswap\s/` wählt die Zeilen mit dem Wort `swap`, `s/^/#/` setzt ein `#` an den Zeilenanfang.
 - **Wo:** Terminal des Laborrechners.
 - **Erwartet:** keine Ausgabe.
-- **Prüfen:** `grep swap /etc/fstab` zeigt die Swap-Zeile nur noch mit `#` am Anfang (unter Ubuntu meist `#/swap.img ...`).
+- **Prüfen:** `grep swap /etc/fstab` zeigt die Swap-Zeile nur noch mit `#` am Anfang (unter Ubuntu meist `#/swap.img ...`). Gibt `grep` gar nichts aus, bindet `/etc/fstab` keinen Swap ein, und es ist nichts zu tun.
 
-<!-- TODO: Ausgabe vom Laborrechner einfügen -->
+Beispiel (ruki-ws-02, 03.11.2026): `grep swap /etc/fstab` gibt nichts aus. Der Rechner wurde ohne Swap installiert, `sed` hatte nichts zu ändern.
 
 ### 2.2 Kernel-Modul br_netfilter laden
 
