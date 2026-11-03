@@ -34,7 +34,7 @@ Ergebnis am 02.11.2026 (Beispiel, nicht übernehmen ohne neue Prüfung):
 | Gepflegte Kubernetes-Versionen | Version Skew Policy | 1.37, 1.36, 1.35 |
 | Gewählt | Schnittmenge | Kubernetes 1.36 mit Kubeflow 26.03.1 |
 
-Die Release-Seite nennt außerdem die Kustomize-Version (für 26.03: `5.8.1`). Sie wird in Abschnitt 5 gebraucht. kubectl enthält eine eigene Kustomize-Version (https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/); bei kubectl 1.36.6 ist es `v5.8.1` (Ausgabe von `kubectl version --client`, siehe [1.2](#12-den-rechner-prüfen)). Ob `kubectl kustomize` das eigenständige Programm `kustomize` ersetzen kann, wird in Abschnitt 5 geprüft.
+Die Release-Seite nennt außerdem die Kustomize-Version (für 26.03: `5.8.1`). Sie wird in Abschnitt 5 gebraucht. kubectl enthält eine eigene Kustomize-Version (https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/); bei kubectl 1.36.6 ist es `v5.8.1` (Ausgabe von `kubectl version --client`, siehe [1.2](#12-den-rechner-prüfen)). Warum Abschnitt 5 trotzdem das eigenständige Programm `kustomize` installiert, steht in [5.2](05-kubeflow-installieren.md#52-kustomize-installieren).
 
 ## 1.2 Den Rechner prüfen
 
