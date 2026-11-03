@@ -10,7 +10,9 @@ nodeRegistration:
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: v1.36.6
-# Stabiler Name statt IP: steht in admin.conf, kubelet.conf und in der kube-proxy-Konfiguration.
+# Stabiler Name statt IP: steht in admin.conf, super-admin.conf und in der kube-proxy-Konfiguration.
+# kubelet.conf, controller-manager.conf und scheduler.conf erhalten trotzdem die IP (Messung auf ruki-ws-02, 03.11.2026);
+# sie werden in Abschnitt 2.11 des README auf diesen Namen umgestellt.
 # Der Name muss in /etc/hosts eingetragen sein (siehe README).
 controlPlaneEndpoint: "k8s-api:6443"
 networking:
