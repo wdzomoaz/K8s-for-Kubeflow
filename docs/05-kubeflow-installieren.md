@@ -379,4 +379,4 @@ Beispiel (ruki-ws-02, 03.11.2026): keine Ausgabe.
 
 Alternativ nennt das README die Namespaces, deren Pods man einzeln prüfen kann: `cert-manager`, `istio-system`, `auth`, `oauth2-proxy`, `knative-serving`, `kubeflow` und `kubeflow-user-example-com`, jeweils mit `kubectl get pods -n <namespace>`.
 
-Weiter: 6. Zugriff auf das Dashboard (folgt) | [Übersicht](../README.md)
+Weiter: [6. Zugriff auf das Dashboard](06-dashboard-zugriff.md) | [Übersicht](../README.md)
