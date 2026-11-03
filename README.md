@@ -11,7 +11,7 @@ Diese Anleitung legt keine feste Version fest. Sie zeigt, wie man prüft, welche
 3. [GPU-Check und NVIDIA Device Plugin](docs/03-gpu-device-plugin.md)
 4. [Speicher: Local Path Provisioner als Default StorageClass](docs/04-local-path-provisioner.md)
 5. [Kubeflow installieren](docs/05-kubeflow-installieren.md)
-6. Zugriff auf das Dashboard (folgt)
+6. [Zugriff auf das Dashboard](docs/06-dashboard-zugriff.md)
 7. Erster Test: Pipeline mit GPU-Schritt (folgt)
 
 ## Aufbau jedes Befehls
@@ -76,5 +76,9 @@ Wo eine echte Ausgabe vom Laborrechner vorliegt, steht sie als Beispiel unter de
 - Kustomize v5.8.1, Release mit Prüfsummen: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.8.1
 - kubectl kustomize: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/
 - sysctl.d(5), Linux manual page: https://www.man7.org/linux/man-pages/man5/sysctl.d.5.html
+- Kubeflow Community Distribution 26.03.1, README, Abschnitt *Port-Forward*: https://github.com/kubeflow/community-distribution/blob/26.03.1/README.md#port-forward
+- Kubeflow Community Distribution 26.03.1, README, Abschnitt *NodePort / LoadBalancer / Ingress*: https://github.com/kubeflow/community-distribution/blob/26.03.1/README.md#nodeport--loadbalancer--ingress
+- Kubeflow Community Distribution 26.03.1, README, Abschnitt *Change Default User Password*: https://github.com/kubeflow/community-distribution/blob/26.03.1/README.md#change-default-user-password
+- kubectl port-forward: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_port-forward/
 
 Alle Links geprüft am 02.11. bzw. 03.11.2026.
